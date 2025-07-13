@@ -12,19 +12,20 @@ Paste the answer as SQL in the answer code section below each question.
 
 Select the minimum and maximum price per sqm of all the flats.
 
-SELECT 
-    MIN(price_per_sqm) AS min_price_per_sqm,
-    MAX(price_per_sqm) AS max_price_per_sqm
-FROM resale_flat_prices_2017;
+SELECT MIN(price_per_sqm) min_price_per_sqm, MAX(price_per_sqm) max_price_per_sqm
+FROM (
+	SELECT ROUND(resale_price / floor_area_sqm, 2) price_per_sqm
+	FROM main.resale_flat_prices_2017)
+
 
 
 ### Question 2
-
 Select the average price per sqm for flats in each town.
 
-SELECT town,AVG(price_per_sqm) AS avg_price_per_sqm
-FROM resale_flat_prices_2017
-GROUP BY town;
+SELECT town, ROUND(AVG(resale_price / floor_area_sqm), 2) avg_price_per_sqm
+	FROM main.resale_flat_prices_2017
+	GROUP BY town
+	ORDER BY 1
 
 
 ### Question 3
@@ -36,26 +37,31 @@ Categorize flats into price ranges and count how many flats fall into each categ
 - Above $700,000: 'Premium'
   Show the counts in descending order.
 
-SELECT 
-CASE 
-WHEN price < 400000 THEN 'Budget'
-WHEN price BETWEEN 400000 AND 700000 THEN 'Mid-Range'
-ELSE 'Premium'
-END AS price_category,
-    COUNT(*) AS flat_count
-FROM resale_flat_prices_2017
-GROUP BY price_category
-ORDER BY flat_count DESC;
+WITH q1 AS 
+	(SELECT resale_price,
+	       CASE  
+	       		WHEN resale_price < 400000 THEN 'Budget'
+	       		WHEN resale_price BETWEEN 400000 AND 700000 THEN 'Mid-Range'
+	       		ELSE 'Premium'
+	       	END category
+	FROM main.resale_flat_prices_2017)
+SELECT category, COUNT(1) number_of_category
+FROM q1
+GROUP BY category 
+ORDER BY 2 DESC
+
+
 
 ### Question 4
 
 Count the number of flats sold in each town during the first quarter of 2017 (January to March).
-SELECT 
-    town,
-    COUNT(*) AS flats_sold
-FROM resale_flat_prices_2017
-WHERE sale_date >= '2017-01-01' AND sale_date < '2017-04-01'
-GROUP BY town;
+
+SELECT town, month, COUNT(1) number_of_sold 
+	FROM main.resale_flat_prices_2017
+	WHERE month BETWEEN '2017-01' AND '2017-03'
+	GROUP BY town, month
+	ORDER BY 1, 2
+
 
 
 ## Submission
